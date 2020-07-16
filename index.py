@@ -20,8 +20,6 @@ class Province(object):
     id = 0
     session = ""
     regionType = 0
-    openUrlFailCount = 0
-    errorCount = 0
     startTime = 0
     def __init__(self):
         print('正在执行，请稍等....')
@@ -37,7 +35,6 @@ class Province(object):
         print('开始时间:' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.startTime)))
         endTime = time.time()
         print('结束时间:' + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(endTime)))
-        print ("发生错误次数："+str(self.errorCount))
 
         ###插入一条记录到数据库
     def insertMysql(self,data):
@@ -48,41 +45,31 @@ class Province(object):
             print("插入数据库失败,region_id:" + data[0] + ",parent_id:" + data[1] + ",region_type:" + data[2] + ",name:" + data[3])
         self.conn.commit()
 
-
-
         ###打开网址
     def openUrl(self,url):
-        url = self.baseUrl+url
+        global html
+        newUrl = self.baseUrl+url
         try:
-            html = self.session.get(url)
+            html = self.session.get(newUrl)
             html.encoding = self.webCharset
-            print ("打开网址成功：" + url)
-            self.openUrlFailCount = 0
+            print ("打开网址成功：" + newUrl)
         except HTTPError:
-            print('无法打开网页:' + url)
-            self.openUrlFailCount += 1
+            print('无法打开网页:' + newUrl)
         except ConnectionError:
-            print('无法打开网址:' + url)
-            self.openUrlFailCount += 1
-        time.sleep(0.3)
-        if self.openUrlFailCount < 10 and self.openUrlFailCount > 0:
-            self.openUrl(url)
-        elif self.openUrlFailCount > 10:
-            return False
-        else:
-            bs = BeautifulSoup(html.text, self.explainFormat)
-            return bs
+            print('无法打开网址:' + newUrl)
+        return BeautifulSoup(html.text, self.explainFormat)
     ##判断是不是特殊情况
     def isEspecial(self,name):
         return (name == "市辖区" or name == "县")
     ###第五页
     def FifthStep(self, url, parentId=0):
         bs = self.openUrl(url)
-        if bs == False:
-            print ("发生错误")
-            self.errorCount += 1
+        try:
+            villages = bs.find("tr", {"class": "villagehead"}).parent.find_all("td")
+        except:
+            time.sleep(10)
+            self.FifthStep(url,parentId)
             return
-        villages = bs.find("tr", {"class": "villagehead"}).parent.find_all("td")
         regionType = 5
         for key,village in enumerate(villages):
             if (key + 1) %3 == 0 and key > 3:
@@ -92,15 +79,15 @@ class Province(object):
                 ##入库操作
                 data = [str(self.id), str(parentId), str(regionType), villageName]
                 self.insertMysql(data)
-                time.sleep(0.3)
     ###第四页
     def FourthStep(self,url,parentId = 0):
         bs = self.openUrl(url)
-        if bs == False:
-            print ("发生错误")
-            self.errorCount += 1
+        try:
+            towns = bs.find("tr", {"class": "townhead"}).parent.find_all("a")
+        except:
+            time.sleep(10)
+            self.FourthStep(url,parentId)
             return
-        towns = bs.find("tr", {"class": "townhead"}).parent.find_all("a")
         regionType = 4
         for key, town in enumerate(towns):
             if key % 2 == 1:
@@ -113,16 +100,16 @@ class Province(object):
                     ##入库操作
                     data = [str(self.id), str(parentId), str(regionType), townName]
                     self.insertMysql(data)
-                    time.sleep(0.3)
                 self.FifthStep(newUrl, self.id)
     ###第三页
     def ThirdStep(self,url,parentId = 0):
         bs = self.openUrl(url)
-        if bs == False:
-            print ("发生错误")
-            self.errorCount += 1
+        try:
+            areas = bs.find("tr", {"class": "countyhead"}).parent.find_all("a")
+        except:
+            time.sleep(10)
+            self.ThirdStep(10)
             return
-        areas = bs.find("tr", {"class": "countyhead"}).parent.find_all("a")
         regionType = 3
         for key,area in enumerate(areas):
             if key % 2 == 1:
@@ -139,11 +126,12 @@ class Province(object):
     ##解析次页
     def secondStep(self,url,parentId = 0):
         bs = self.openUrl(url)
-        if bs == False:
-            print ("发生错误")
-            self.errorCount += 1
+        try:
+            citys = bs.find("tr",{"class":"cityhead"}).parent.find_all("a")
+        except:
+            time.sleep(10)
+            self.secondStep(url,parentId)
             return
-        citys = bs.find("tr",{"class":"cityhead"}).parent.find_all("a")
         regionType = 2
         for key,city in enumerate(citys):
             if key %2 == 1:
@@ -159,11 +147,12 @@ class Province(object):
     ###解析首页
     def firstStep(self,url,parentId = 0):
         bs = self.openUrl(url)
-        if bs == False:
-            print ("发生错误")
-            self.errorCount += 1
+        try:
+            provinces = bs.find("tr",{"class":"provincehead"}).parent.find_all("a")
+        except:
+            time.sleep(10)
+            self.firstStep(url,parentId)
             return
-        provinces = bs.find("tr",{"class":"provincehead"}).parent.find_all("a")
         regionType = 1  #行政级别
         for province in provinces:
             self.id += 1
