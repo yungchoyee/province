@@ -77,11 +77,12 @@ class Province(object):
         return (name == "市辖区" or name == "县")
     ###第五页
     def FifthStep(self, url, parentId=0):
+        time.sleep(0.4)
         bs = self.openUrl(url)
         try:
             villages = bs.find("tr", {"class": "villagehead"}).parent.find_all("td")
         except:
-            time.sleep(10)
+            time.sleep(20)
             self.FifthStep(url,parentId)
             return
         regionType = 5
@@ -95,11 +96,12 @@ class Province(object):
                 self.insertMysql(data)
     ###第四页
     def FourthStep(self,url,parentId = 0):
+        time.sleep(0.4)
         bs = self.openUrl(url)
         try:
             towns = bs.find("tr", {"class": "townhead"}).parent.find_all("a")
         except:
-            time.sleep(10)
+            time.sleep(20)
             self.FourthStep(url,parentId)
             return
         regionType = 4
@@ -117,12 +119,13 @@ class Province(object):
                 self.FifthStep(newUrl, self.id)
     ###第三页
     def ThirdStep(self,url,parentId = 0):
+        time.sleep(0.4)
         bs = self.openUrl(url)
         try:
             areas = bs.find("tr", {"class": "countyhead"}).parent.find_all("a")
         except:
-            time.sleep(10)
-            self.ThirdStep(10)
+            time.sleep(20)
+            self.ThirdStep(url,parentId)
             return
         regionType = 3
         for key,area in enumerate(areas):
@@ -139,11 +142,12 @@ class Province(object):
                 self.FourthStep(newUrl,self.id)
     ##解析次页
     def secondStep(self,url,parentId = 0):
+        time.sleep(0.4)
         bs = self.openUrl(url)
         try:
             citys = bs.find("tr",{"class":"cityhead"}).parent.find_all("a")
         except:
-            time.sleep(10)
+            time.sleep(20)
             self.secondStep(url,parentId)
             return
         regionType = 2
@@ -160,11 +164,12 @@ class Province(object):
                 self.ThirdStep(newUrl,self.id)
     ###解析首页
     def firstStep(self,url,parentId = 0):
+        time.sleep(0.4)
         bs = self.openUrl(url)
         try:
             provinces = bs.find("tr",{"class":"provincehead"}).parent.find_all("a")
         except:
-            time.sleep(10)
+            time.sleep(20)
             self.firstStep(url,parentId)
             return
         regionType = 1  #行政级别
