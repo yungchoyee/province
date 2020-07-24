@@ -1,6 +1,5 @@
 #/usr/bin/python
 # -*- coding:utf8 -*
-
 import mysql.connector
 import time
 

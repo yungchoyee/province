@@ -132,14 +132,14 @@ class Province(object):
             if key % 2 == 1:
                 self.id += 1
                 areaName = area.get_text()
-                newUrl = "/".join(url.split("/")[:-1])
-                newUrl = newUrl + "/" + area['href']
+                # newUrl = "/".join(url.split("/")[:-1])
+                # newUrl = newUrl + "/" + area['href']
                 print (self.id, areaName)
                 if self.isEspecial(areaName) == False:
                     ##入库操作
                     data = [str(self.id), str(parentId), str(regionType), areaName]
                     self.insertMysql(data)
-                self.FourthStep(newUrl,self.id)
+                # self.FourthStep(newUrl,self.id)
     ##解析次页
     def secondStep(self,url,parentId = 0):
         time.sleep(0.4)
